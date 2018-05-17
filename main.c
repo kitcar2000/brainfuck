@@ -10,7 +10,8 @@ int main(int argc, const char **argv)
     struct char_tape *tape = create_tape('\x00', NULL, NULL);
     char **stk = (char **)malloc(STACK_SIZE * sizeof(char *));
     *stk = (char *)malloc(CODE_MAX_LENGTH);
-    char **stk_top = stk;
+    char **stk_top = stk,
+         *code = *stk;
     switch (argc)
     {
     case 1:
@@ -88,7 +89,7 @@ int main(int argc, const char **argv)
             ++*stk;
         }
     }
-    //free((void *)*stk_top);
+    free((void *)code);
     free((void *)stk_top);
     destroy_tape(tape);
     return 0;

@@ -17,20 +17,27 @@ struct char_tape *create_tape(char value, struct char_tape *left, struct char_ta
     return tape;
 }
 
-// Free memory used by tape.
+// Free memory used by tape.  I don't trust my intuition about C enough to trust it to manage the tape's memory for me.
 void destroy_tape(struct char_tape *tape)
 {
-    if (tape->left != NULL)
+    struct char_tape *nextTape, *currentTape;
+
+    nextTape = tape->left; // Destroy cells to the left of *tape.
+    while (nextTape != NULL)
     {
-        tape->left->right = NULL; // Prevent infinite recursion when destroying left tape.
-        destroy_tape(tape->left);
+        currentTape = nextTape;
+        nextTape = nextTape->left;
+        free((void *)currentTape);
     }
-    if (tape->right != NULL)
+    nextTape = tape->right; // Destroy cells to the right of *tape.
+    while (nextTape != NULL)
     {
-        tape->right->left = NULL; // Prevent infinite recursion when destroying right tape.
-        destroy_tape(tape->left);
+        currentTape = nextTape;
+        nextTape = nextTape->right;
+        free((void *)currentTape);
     }
-    free((void *)tape);
+
+    free((void *)tape); // Destroy *tape.
 }
 
 // Get the cell to the left of the current on a char_tape structure.
