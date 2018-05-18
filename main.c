@@ -1,27 +1,24 @@
+#include "stack.c"
 #include "tape.c"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define CODE_MAX_LENGTH 2048
-#define STACK_SIZE 16
 
 int main(int argc, const char **argv)
 {
     struct char_tape *tape = create_tape('\x00', NULL, NULL);
-    char **stk = (char **)malloc(STACK_SIZE * sizeof(char *));
-    *stk = (char *)malloc(CODE_MAX_LENGTH);
-    char **stk_top = stk,
-         *code = *stk;
+    char *code = malloc(CODE_MAX_LENGTH);
+    struct char_ptr_stack *stk = create_stack(code, NULL);
     switch (argc)
     {
     case 1:
-        gets(*stk);
+        gets(code);
         break;
     case 2:
     {
         FILE *f = fopen(argv[1], "rb");
-        size_t length = fread(*stk, sizeof(char), CODE_MAX_LENGTH, f);
-        //*stk_top = realloc(*stk_top, length);
+        size_t length = fread(code, sizeof(char), CODE_MAX_LENGTH, f);
         fclose(f);
         break;
     }
@@ -29,37 +26,37 @@ int main(int argc, const char **argv)
         printf("%i", argc);
         return 1;
     }
-    while (**stk != '\0')
+    while (*(stk->head) != '\0')
     {
-        switch (**stk)
+        switch (*(stk->head))
         {
         case '+':
-            ++*stk;
+            ++(stk->head);
             increment_tape(tape);
             break;
         case '-':
-            ++*stk;
+            ++(stk->head);
             decrement_tape(tape);
             break;
         case '>':
-            ++*stk;
+            ++(stk->head);
             tape = get_tape_right(tape, '\x00');
             break;
         case '<':
-            ++*stk;
+            ++(stk->head);
             tape = get_tape_left(tape, '\x00');
             break;
         case '[':
             if (tape->value)
             {
-                ++*stk;
-                *++stk = *(stk - 1);
+                ++(stk->head);
+                stack_push(&stk, stk->head);
             }
             else
             {
                 int depth = 1;
                 while (depth > 0)
-                    switch (*++*stk)
+                    switch (*(++(stk->head)))
                     {
                     case '[':
                         ++depth;
@@ -68,29 +65,32 @@ int main(int argc, const char **argv)
                         --depth;
                         break;
                     }
-                ++*stk;
+                ++(stk->head);
             }
             break;
         case ']':
             if (tape->value)
-                *stk = *(stk - 1);
+                stk->head = stk->tail->head;
             else
-                *(--stk) = *(stk + 1) + 1;
+            {
+                char *p = stack_pop(&stk);
+                stk->head = p + 1;
+            }
             break;
         case '.':
-            ++*stk;
+            ++(stk->head);
             putchar(tape->value);
             break;
         case ',':
-            ++*stk;
+            ++(stk->head);
             tape->value = getchar();
             break;
         default:
-            ++*stk;
+            ++(stk->head);
         }
     }
     free((void *)code);
-    free((void *)stk_top);
+    destroy_stack(stk);
     destroy_tape(tape);
     return 0;
 }
